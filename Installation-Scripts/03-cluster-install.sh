@@ -10,7 +10,8 @@ read INT
 INT=${INT:-ens33}
 IP=$(echo $INTLIST|grep $INT | awk '{print $2}'|cut -d "/" -f1)
 echo "$INT and $IP"
-read t
+sleep 3
+
 HOST=$(hostname)
 
 kubeadm init --apiserver-advertise-address $IP --control-plane-endpoint $IP --node-name $HOST
