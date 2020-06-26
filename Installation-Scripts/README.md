@@ -6,7 +6,7 @@
  2. setup Static IP to both nodes
  3. update /etc/hosts file for all nodes (for Virutal box make sure its your host-only-interface IPs)
     
-	- eg. 
+     - eg. 
       192.168.0.10 master-1
       192.168.0.11 worker-1
       192.168.0.12 worker-2

@@ -1,6 +1,16 @@
 #!/bin/bash
 
-IP=$(ifconfig ens33 | grep inet |head -1 | tr -s " " |cut -d " " -f3)
+#list of interface and associate IPs
+INTLIST=$(ip a |grep -i inet | awk '{print $7, $2}' | grep ^e)
+echo "$INTLIST"
+
+echo -n "Enter Interface name from above list eg. \"ens33\" :"
+read INT
+
+INT=${INT:-ens33}
+IP=$(echo $INTLIST|grep $INT | awk '{print $2}'|cut -d "/" -f1)
+echo "$INT and $IP"
+read t
 HOST=$(hostname)
 
 kubeadm init --apiserver-advertise-address $IP --control-plane-endpoint $IP --node-name $HOST
@@ -15,8 +25,5 @@ sleep 5
 kubeadm token create --print-join-command --ttl 0 2>/dev/null > 99-node-join.sh
 kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
 chmod +x 99-node-join.sh
-
-echo "alias ks=kubectl" >> .bashrc
-source .bashrc
-
-
+echo "alias ks=kubectl" >> ~/.bashrc
+source ~/.bashrc
