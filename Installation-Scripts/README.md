@@ -41,6 +41,6 @@
   
     - sh ./04-node-install.sh
     
-    
+    - it will ask for the worker node name eg. "worker-1"
   
   ---
