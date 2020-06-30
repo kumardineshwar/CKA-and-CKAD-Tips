@@ -1,0 +1,7 @@
+# get all deployment details and excluding manage fields and converting into yaml file
+
+kubectl get deploy -o json  | jq 'del(.items[].metadata.managedFields[])'  | ruby -ryaml -rjson -e 'puts YAML.dump(JSON.parse(STDIN.read))'
+
+# To get a specific deployment with excluding manage-fileds and converting into yaml file
+
+kubectl get deploy mydeployment -o json  | jq 'del(.metadata.managedFields[])'  | ruby -ryaml -rjson -e 'puts YAML.dump(JSON.parse(STDIN.read))'
