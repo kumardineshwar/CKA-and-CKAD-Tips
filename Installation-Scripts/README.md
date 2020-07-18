@@ -43,4 +43,15 @@
     
     - it will ask for the worker node name eg. "worker-1"
   
+  12. Run "05-install-nfs-server.sh" to setup nfs server on master node
+  
+    - sh ./05-install-nfs-server.sh
+
+    - it will create /mnt/nfs_share on master node
+
+  13. To Remove node run "100-node-remove.sh" script to add worker nodes
+  
+    - sh ./100-node-remove.sh
+    
+    - it will ask for the worker node name eg. "worker-1"
   ---
