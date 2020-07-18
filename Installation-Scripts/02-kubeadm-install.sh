@@ -19,3 +19,5 @@ sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 echo "alias ks=kubectl" >> ~/.bashrc
 source ~/.bashrc
+#installing nfs client on all nodes
+sudo apt install nfs-common -y
