@@ -14,7 +14,7 @@ sleep 3
 
 HOST=$(hostname)
 
-kubeadm init --apiserver-advertise-address $IP --control-plane-endpoint $IP --node-name $HOST
+kubeadm init --apiserver-advertise-address $IP --control-plane-endpoint $IP --node-name $HOST --v 7
 
 sleep 5
 

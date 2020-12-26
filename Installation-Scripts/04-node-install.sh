@@ -13,7 +13,7 @@ ssh $NODE chmod +x $SCRIPT
 
 ssh $NODE 'SCRIPT="01-docker-install.sh 02-kubeadm-install.sh 99-node-join.sh";for i in $SCRIPT; do echo "$i"; sh "$i"; done'
 
-ssh $NODE rm -f $SCRIPT
+#ssh $NODE rm -f $SCRIPT
 
 sleep 5
 
