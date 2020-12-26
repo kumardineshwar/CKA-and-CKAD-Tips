@@ -6,7 +6,7 @@
 sudo apt-get update && sudo apt-get install -y \
   apt-transport-https ca-certificates curl software-properties-common gnupg2
 # Add Docker’s official GPG key:
-read -p "Enter the CRI name to install \"docker|crio" CRI
+read -p "Enter the CRI name to install \"docker|crio\" :" CRI
 CRI={CRI:-crio}
 if [$CRI == "docker"]
 then
@@ -44,8 +44,8 @@ echo "Installing CRI-O Runtime"
 
 sudo modprobe overlay
 sudo modprobe br_netfilter
-VERSION="1.18:1.18.3"
-OS="xUbuntu_18.04"
+VERSION="1.19"
+OS="xUbuntu_20.04"
 # Set up required sysctl params, these persist across reboots.
 cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
 net.bridge.bridge-nf-call-iptables  = 1
