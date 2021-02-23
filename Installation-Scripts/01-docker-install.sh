@@ -44,7 +44,7 @@ echo "Installing CRI-O Runtime"
 
 sudo modprobe overlay
 sudo modprobe br_netfilter
-VERSION="1.19"
+VERSION="1.20"
 OS="xUbuntu_20.04"
 # Set up required sysctl params, these persist across reboots.
 cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
@@ -67,6 +67,12 @@ curl -L https://download.opensuse.org/repositories/devel:kubic:libcontainers:sta
 
 sudo apt-get update
 sudo apt-get install cri-o cri-o-runc
+
+cat <<EOF | sudo tee /etc/crio/crio.conf.d/02-cgroup-manager.conf
+[crio.runtime]
+conmon_cgroup = "pod"
+cgroup_manager = "cgroupfs"
+EOF
 
 sudo systemctl daemon-reload
 sudo systemctl start crio
