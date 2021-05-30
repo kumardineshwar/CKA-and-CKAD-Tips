@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VER="FIXME"
+VER="1.20.7-00"
 cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
@@ -14,6 +14,7 @@ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
 cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
+apt-get update 
 sudo apt-cache madison kubeadm |head -n 20 | tr -d " "| awk -F "|" '{print $2}' > /tmp/k8s-version-to-install
 if [ "$VER" == "FIXME" ]
 then
