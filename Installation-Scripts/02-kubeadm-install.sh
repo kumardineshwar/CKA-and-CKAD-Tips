@@ -9,6 +9,7 @@ sudo sysctl --system
 
 sudo modprobe br_netfilter
 sudo apt-get update && sudo apt-get install -y apt-transport-https curl
+sleep 5
 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
 deb https://apt.kubernetes.io/ kubernetes-xenial main
@@ -26,6 +27,9 @@ then
   else
      VERI=$VER
   fi
+else
+
+     VERI=$VER
 
 fi
 if [ $(grep -c "$VERI"  /tmp/k8s-version-to-install) -ge 1 ]
