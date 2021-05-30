@@ -31,8 +31,7 @@ else
 fi
 if [ $(grep -c "$VERI"  /tmp/k8s-version-to-install) -ge 1 ]
 then
-	echo -e "Going to install : $VERI \n Press Enter to continue"
-	read confirm
+	echo -e "Going to install : $VERI"
 else
 	echo "Seems you have not choosen the right kubernetes version : $VERI"
 	exit 1
