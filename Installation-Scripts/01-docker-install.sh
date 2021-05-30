@@ -3,6 +3,7 @@
 # (Install Docker CE)
 ## Set up the repository:
 ### Install packages to allow apt to use a repository over HTTPS
+ systemctl stop crio  2>/dev/null
 apt remove  cri-o cri-o-runc 
 /usr/sbin/swapoff -a
 sudo apt-get update && sudo apt-get install -y \
@@ -35,4 +36,3 @@ sudo mkdir -p /etc/systemd/system/docker.service.d
 # Restart Docker
 sudo systemctl daemon-reload
 sudo systemctl restart docker
-

@@ -5,16 +5,18 @@ read NODE
 echo -n "Enter CRI to install crio:docker - : "
 read CRI
 SCRIPT="01-$CRI-install.sh 02-kubeadm-install.sh 99-node-join.sh"
-
+echo $CRI
+read a
 #NODE=$1
+echo $SCRIPT
+ssh $NODE "mkdir -p /tmp/k8s"
+scp $SCRIPT $NODE:/tmp/k8s/
 
-scp $SCRIPT $NODE:~/
+ssh $NODE chmod +x /tmp/k8s/*
 
-ssh $NODE chmod +x $SCRIPT
+ssh $NODE 'for i in $(ls  /tmp/k8s/*|sort -h); do echo "$i"; sh "$i"; done'
 
-ssh $NODE 'SCRIPT="01-$CRI-install.sh 02-kubeadm-install.sh 99-node-join.sh";for i in $SCRIPT; do echo "$i"; sh "$i"; done'
-
-ssh $NODE rm -f $SCRIPT
+ssh $NODE rm -rf /tmp/k8s 2>/dev/null
 
 sleep 5
 

@@ -39,7 +39,8 @@ sudo apt-get install cri-o cri-o-runc
 cat <<EOF | sudo tee /etc/crio/crio.conf.d/02-cgroup-manager.conf
 [crio.runtime]
 conmon_cgroup = "pod"
-cgroup_manager = "cgroupfs"
+#cgroup_manager = "cgroupfs"
+cgroup_manager = "systemd"
 EOF
 
 sudo systemctl daemon-reload
