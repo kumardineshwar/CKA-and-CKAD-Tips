@@ -32,15 +32,7 @@ else
      VERI=$VER
 
 fi
-if [ $(grep -c "$VERI"  /tmp/k8s-version-to-install) -ge 1 ]
-then
-	echo -e "Going to install : $VERI "
-else
-	echo "Seems you have not choosen the right kubernetes version : $VERI"
-	exit 1
-fi
-echo $VERI
-
+echo -e "Going to install : $VERI "
 
 /usr/sbin/swapoff -a
 sudo apt-get update
