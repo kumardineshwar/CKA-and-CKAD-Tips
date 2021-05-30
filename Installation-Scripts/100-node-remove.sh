@@ -23,4 +23,4 @@ kubectl cordon $node
 
 kubectl delete node $node
 
-ssh $node "systemctl stop kubelet docker && kubeadm reset --force && reboot"
+ssh $node "systemctl stop kubelet docker crio; kubeadm reset --force && reboot"
