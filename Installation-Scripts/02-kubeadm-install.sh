@@ -8,9 +8,15 @@ EOF
 sudo sysctl --system
 
 sudo modprobe br_netfilter
+sudo apt-get update && sudo apt-get install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+sudo apt-cache madison kubeadm |head -n 20 | tr -d " "| awk -F "|" '{print $2}' |tee /tmp/k8s-version-to-install
 if [ "$VER" == "FIXME" ]
 then
-   sudo apt-cache madison kubeadm |head -n 20 | tr -d " "| awk -F "|" '{print $2}' |tee /tmp/k8s-version-to-install
+
    read -p "Enter the kubernetes version to install the default will $VER  : " K8S
    K8S=${K8S:-"1.20.7-00"}
    if [ "$VER" != "$K8S" ]
@@ -24,19 +30,14 @@ then
 fi
 if [ $(grep -c "$VERI"  /tmp/k8s-version-to-install) -ge 1 ]
 then
-	echo -e "Going to install : $VERI \n Press Enter to continue"
-	read confirm
+	echo -e "Going to install : $VERI "
 else
 	echo "Seems you have not choosen the right kubernetes version : $VERI"
 	exit 1
 fi
 echo $VERI
 
-sudo apt-get update && sudo apt-get install -y apt-transport-https curl
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
-deb https://apt.kubernetes.io/ kubernetes-xenial main
-EOF
+
 /usr/sbin/swapoff -a
 sudo apt-get update
 #sudo apt-cache madison kubeadm
