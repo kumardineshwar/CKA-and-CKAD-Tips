@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VER="1.20.4-00"
+VER="1.19.10-00"
 cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
@@ -8,9 +8,15 @@ EOF
 sudo sysctl --system
 
 sudo modprobe br_netfilter
+sudo apt-get update && sudo apt-get install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+sudo apt-cache madison kubeadm |head -n 20 | tr -d " "| awk -F "|" '{print $2}' > /tmp/k8s-version-to-install
 if [ "$VER" == "FIXME" ]
 then
-   sudo apt-cache madison kubeadm |head -n 20 | tr -d " "| awk -F "|" '{print $2}' |tee /tmp/k8s-version-to-install
+   cat /tmp/k8s-version-to-install
    read -p "Enter the kubernetes version to install the default will $VER  : " K8S
    K8S=${K8S:-"1.20.7-00"}
    if [ "$VER" != "$K8S" ]
@@ -20,7 +26,8 @@ then
   else
      VERI=$VER
   fi
-
+else
+  VERI=$VER
 fi
 if [ $(grep -c "$VERI"  /tmp/k8s-version-to-install) -ge 1 ]
 then
@@ -32,11 +39,8 @@ else
 fi
 echo $VERI
 
-sudo apt-get update && sudo apt-get install -y apt-transport-https curl
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
-deb https://apt.kubernetes.io/ kubernetes-xenial main
-EOF
+
+
 /usr/sbin/swapoff -a
 sudo apt-get update
 #sudo apt-cache madison kubeadm
