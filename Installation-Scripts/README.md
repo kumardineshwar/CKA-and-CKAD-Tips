@@ -2,7 +2,7 @@
 
 # Pre-Req 
 ---
- 1. Setup 2 Unubtu-18.x vm nodes
+ 1. Setup 2 Unubtu-20.x vm nodes
  2. setup Static IP to both nodes
  3. update /etc/hosts file for all nodes (for Virutal box make sure its your host-only-interface IPs)
     
@@ -27,7 +27,8 @@
   
   8. run the "01-docker-install.sh" to install docker container run-time, you can skip if CRI is already installed
     
-    - sh ./01-docker-install.sh
+    - sh ./01-docker-install.sh # Use it to install Docker
+    - sh ./01-crio-install.sh # use it to install CRIO 
   
   9. run the "02-kubeadm-install.sh" to install latest kubernetes binaries. 
    
