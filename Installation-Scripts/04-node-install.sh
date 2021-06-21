@@ -2,7 +2,7 @@
 
 echo -n "Enter worker node name : "
 read NODE
-echo -n "Enter CRI to install crio:docker - : "
+echo -n "Enter CRI to install crio:docker:containerd - : "
 read CRI
 SCRIPT="01-$CRI-install.sh 02-kubeadm-install.sh 99-node-join.sh"
 echo $CRI
