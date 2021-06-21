@@ -20,22 +20,24 @@ net.bridge.bridge-nf-call-ip6tables = 1
 EOF
 
 sudo sysctl --system
-
+rm -f /etc/apt/sources.list.d/*cri-o* 2>/dev/null >/dev/null
+rm -rf /etc/crio >/dev/null 2>/dev/null
 sudo apt-get update
 sudo apt-get install containerd -y
 
 sudo mkdir -p /etc/containerd
 containerd config default | sudo tee /etc/containerd/config.toml
+sed -i '/containerd.runtimes.runc.options/a SystemdCgroup = true' /etc/containerd/config.toml
 
 
 
 
-cat <<EOF | sudo tee /etc/crio/crio.conf.d/02-cgroup-manager.conf
-[crio.runtime]
-conmon_cgroup = "pod"
-#cgroup_manager = "cgroupfs"
-cgroup_manager = "systemd"
-EOF
+#cat <<EOF | sudo tee /etc/crio/crio.conf.d/02-cgroup-manager.conf
+#[crio.runtime]
+#conmon_cgroup = "pod"
+##cgroup_manager = "cgroupfs"
+#cgroup_manager = "systemd"
+#EOF
 
 sudo systemctl daemon-reload
 sudo systemctl restart containerd
