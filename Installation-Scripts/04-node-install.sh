@@ -19,6 +19,6 @@ ssh $NODE 'for i in $(ls  /tmp/k8s/*|sort -h); do echo "$i"; sh "$i"; done'
 ssh $NODE rm -rf /tmp/k8s 2>/dev/null
 
 sleep 5
-
+kubectl label node $NODE node-role.kubernetes.io/worker=
 kubectl get nodes -o wide
 
