@@ -40,6 +40,9 @@ if [ "$CNI" == "calico" ]
 then
 	echo "Installing Calico CNI with default POD CIDR 192.168.0.0/16"
 	curl https://docs.projectcalico.org/manifests/calico.yaml  | kubectl apply -f -
+	curl -o /usr/local/bin/calicoctl -O -L  "https://github.com/projectcalico/calicoctl/releases/download/v3.19.1/calicoctl" 
+	curl -o /usr/local/bin/kubectl-calico -O -L  "https://github.com/projectcalico/calicoctl/releases/download/v3.19.1/calicoctl"
+	chmod +x  /usr/local/bin/calicoctl  /usr/local/bin/kubectl-calico
 else
 	echo "Installing Weave as Default CNI"
 	kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
