@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VER="1.21.2-00"
+VER="FIXME"
 cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
@@ -20,7 +20,7 @@ if [ "$VER" == "FIXME" ]
 then
 
 cat /tmp/k8s-version-to-install
-   read -p "Enter the kubernetes version to install the default will $VER  : " K8S
+   read -p "Enter the kubernetes version to install the default will 1.20.7-00 : " K8S
    K8S=${K8S:-"1.20.7-00"}
    if [ "$VER" != "$K8S" ]
      then
