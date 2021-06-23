@@ -36,3 +36,4 @@ kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl versio
 chmod +x 99-node-join.sh
 echo "alias ks=kubectl" >> ~/.bashrc
 source ~/.bashrc
+rm -f .cri_* 2>/dev/null
