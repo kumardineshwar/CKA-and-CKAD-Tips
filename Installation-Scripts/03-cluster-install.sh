@@ -39,7 +39,7 @@ kubeadm token create --print-join-command --ttl 0 2>/dev/null > 99-node-join.sh
 if [ "$CNI" == "calico" ]
 then
 	echo "Installing Calico CNI with default POD CIDR 192.168.0.0/16"
-	curl https://docs.projectcalico.org/manifests/calico.yaml  | kubeclt apply -f -
+	curl https://docs.projectcalico.org/manifests/calico.yaml  | kubectl apply -f -
 else
 	echo "Installing Weave as Default CNI"
 	kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
@@ -48,10 +48,10 @@ fi
 chmod +x 99-node-join.sh
 if [ "$SHELL" == "/usr/bin/zsh" ]
 then
-	echo "[[ $commands[kubectl] ]] && source <(kubectl completion zsh)" >> ~/.zshrc
+	echo '[[ $commands[kubectl] ]] && source <(kubectl completion zsh)' >> ~/.zshrc
 	echo "alias ks=kubectl" >> ~/.zshrc
         echo "complete -F __start_kubectl ks"  >> ~/.zshrc
-	source ~/.zshrc
+	source ~/.zshrc 
 else
 	echo "Setting up bash completion"
 	echo "source <(kubectl completion bash)" >> ~/.bashrc
