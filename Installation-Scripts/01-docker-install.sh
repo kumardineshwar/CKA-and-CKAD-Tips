@@ -3,9 +3,11 @@
 # (Install Docker CE)
 ## Set up the repository:
 ### Install packages to allow apt to use a repository over HTTPS
- systemctl stop crio  2>/dev/null
+systemctl stop crio  2>/dev/null
 apt remove  cri-o cri-o-runc  -y
 /usr/sbin/swapoff -a
+rm -f .cri_* 2>/dev/null
+
 sudo apt-get update && sudo apt-get install -y \
   apt-transport-https ca-certificates curl software-properties-common gnupg2
 # Add Docker’s official GPG key:
@@ -33,3 +35,4 @@ sudo mkdir -p /etc/systemd/system/docker.service.d
 # Restart Docker
 sudo systemctl daemon-reload
 sudo systemctl restart docker
+touch .cri_docker

@@ -13,14 +13,22 @@ echo "$INT and $IP"
 sleep 3
 
 HOST=$(hostname)
-
-kubeadm init --apiserver-advertise-address $IP --control-plane-endpoint $IP --node-name $HOST --v 7
+echo "Hang Tight. Pulling Required Images..."
+kubeadm config images pull
+echo "Required Images are pulled..."
+if [ -f .cri_containerd ]
+then
+	# mentioning which CRI Socket to used
+	kubeadm init --cri-socket /run/containerd/containerd.sock  --apiserver-advertise-address $IP --control-plane-endpoint $IP --node-name $HOST --v 7
+else
+	kubeadm init --apiserver-advertise-address $IP --control-plane-endpoint $IP --node-name $HOST --v 7
+fi
 
 sleep 5
 
-  mkdir -p $HOME/.kube
-  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 
 kubeadm token create --print-join-command --ttl 0 2>/dev/null > 99-node-join.sh

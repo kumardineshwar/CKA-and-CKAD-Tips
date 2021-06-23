@@ -3,6 +3,7 @@
 # use this script to install crio 
 #  Refrence - https://kubernetes.io/docs/setup/production-environment/container-runtimes/
 /usr/sbin/swapoff -a
+rm -f .cri_* 2>/dev/null
 cat <<EOF | sudo tee /etc/modules-load.d/crio.conf
 overlay
 br_netfilter
@@ -45,4 +46,4 @@ EOF
 
 sudo systemctl daemon-reload
 sudo systemctl enable crio --now
-
+touch .cri_crio
