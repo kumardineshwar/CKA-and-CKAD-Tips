@@ -27,7 +27,8 @@ sudo apt-get install containerd -y
 
 sudo mkdir -p /etc/containerd
 containerd config default | sudo tee /etc/containerd/config.toml
-sed -i '/containerd.runtimes.runc.options/a SystemdCgroup = true' /etc/containerd/config.toml
+#sed -i '/containerd.runtimes.runc.options/a SystemdCgroup = true' /etc/containerd/config.toml
+sed -i 's/SystemdCgroup =.*/SystemdCgroup = true/g' /etc/containerd/config.toml
 
 
 
