@@ -3,6 +3,7 @@
 # use this script to install crio 
 #  Refrence - https://kubernetes.io/docs/setup/production-environment/container-runtimes/
 /usr/sbin/swapoff -a
+rm -f .cri_* 2>/dev/null
 cat <<EOF | sudo tee /etc/modules-load.d/crio.conf
 overlay
 br_netfilter
@@ -34,7 +35,7 @@ curl -L https://download.opensuse.org/repositories/devel:kubic:libcontainers:sta
 curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/Release.key | sudo apt-key --keyring /etc/apt/trusted.gpg.d/libcontainers.gpg add -
 
 sudo apt-get update
-sudo apt-get install cri-o cri-o-runc
+sudo apt-get install cri-o cri-o-runc -y
 
 cat <<EOF | sudo tee /etc/crio/crio.conf.d/02-cgroup-manager.conf
 [crio.runtime]
@@ -45,4 +46,4 @@ EOF
 
 sudo systemctl daemon-reload
 sudo systemctl enable crio --now
-
+touch .cri_crio

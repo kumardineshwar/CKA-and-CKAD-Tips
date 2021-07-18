@@ -20,7 +20,7 @@ if [ "$VER" == "FIXME" ]
 then
 
 cat /tmp/k8s-version-to-install
-   read -p "Enter the kubernetes version to install the default will $VER  : " K8S
+   read -p "Enter the kubernetes version to install the default will 1.20.7-00 : " K8S
    K8S=${K8S:-"1.20.7-00"}
    if [ "$VER" != "$K8S" ]
      then
