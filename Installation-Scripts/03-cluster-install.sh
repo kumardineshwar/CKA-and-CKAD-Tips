@@ -1,22 +1,32 @@
 #!/bin/bash
 
-#list of interface and associate IPs
-INTLIST=$(ip a |grep -i inet | awk '{print $7, $2}' | grep ^e)
-echo "$INTLIST"
+HOST=$(hostname)
+IPLIST=$(ip -o addr show up primary scope global | awk '{print $4}' |cut -d"/" -f1)
+echo -e "$IPLIST"
+read -p "Enter Ip Address from above list eg. : " IP
+IP=${IP:-127.0.0.1}
+if [ "$IP" == "127.0.0.1" ]
+then
 
-echo -n "Enter Interface name from above list eg. \"ens33\" :"
-read INT
+	IP=$(echo -e "$IPLIST" | head -n 1)
+	echo "No IP Provided, using first public Interface IP : $IP"
 
-INT=${INT:-ens33}
-IP=$(echo $INTLIST|grep $INT | awk '{print $2}'|cut -d "/" -f1)
-echo "$INT and $IP"
+fi	
+
+echo "Cluster will running on $IP : $HOST"
+
 sleep 2
-
+if [ $(grep -c $IP /etc/hosts) -lt 1 ]
+then
+	echo "Missing /etc/hosts entry, adding below entry to /etc/hosts for Cluster Installation"
+	cp -f /etc/hosts /etc/hosts.orig
+	echo "$IP $HOST" |tee -a /etc/hosts
+fi
 read -p "Enter the CNI to use weave|calico :" CNI
 CNI=${CNI:-weave}
 
-HOST=$(hostname)
 echo "Hang Tight. Pulling Required Images..."
+read abc
 kubeadm config images pull
 echo "Required Images are pulled..."
 if [ -f .cri_containerd ]

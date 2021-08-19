@@ -45,5 +45,6 @@ cgroup_manager = "systemd"
 EOF
 
 sudo systemctl daemon-reload
+sudo systemctl restart crio 
 sudo systemctl enable crio --now
 touch .cri_crio
