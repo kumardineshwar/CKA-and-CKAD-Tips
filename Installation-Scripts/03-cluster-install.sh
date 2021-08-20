@@ -26,7 +26,7 @@ read -p "Enter the CNI to use weave|calico :" CNI
 CNI=${CNI:-weave}
 
 echo "Hang Tight. Pulling Required Images..."
-read abc
+
 kubeadm config images pull
 echo "Required Images are pulled..."
 if [ -f .cri_containerd ]
