@@ -21,7 +21,7 @@ EOF
 
 sudo sysctl --system
 
-VERSION=1.20
+VERSION=1.21
 OS=xUbuntu_20.04
 
 cat <<EOF | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
