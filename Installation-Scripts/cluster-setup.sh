@@ -20,7 +20,7 @@ sudo sysctl --system
 sysctl net.ipv4.ip_forward
 
 sudo systemctl stop apparmor
-sudo systemctl disable apparmor
+sudo systemctl disable apparmor --now
 
 apt-get install containerd -y
 
