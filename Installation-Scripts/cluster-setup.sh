@@ -144,7 +144,7 @@ helm repo add openebs https://openebs.github.io/openebs
 
 helm repo update
 
-helm install openebs --namespace openebs openebs/openebs --set engines.replicated.mayastor.enabled=false --create-namespace
+helm install openebs --namespace openebs openebs/openebs --set engines.replicated.mayastor.enabled=false --set engines.local.zfs.enabled=false --create-namespace
 
 helm ls -n openebs
 
