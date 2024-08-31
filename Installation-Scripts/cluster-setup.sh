@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 
-rm -f /tmp/setup_containerd.sh /tmp/setup_k8s.sh /tmp/node-join.sh /tmp/metallb-address-pool.yaml
+rm -f /tmp/setup_containerd.sh /tmp/setup_k8s.sh /tmp/node-join.sh /tmp/metallb-address-pool.yaml /tmp/lvm-storage-class.yaml
 
 cat<<EOF>> /tmp/setup_containerd.sh
 #!/bin/bash
@@ -17,8 +17,10 @@ echo "net.bridge.bridge-nf-call-ip6tables = 1" | sudo tee -a /etc/sysctl.d/k8s.c
 modprobe br_netfilter
 
 sudo sysctl --system
-
 sysctl net.ipv4.ip_forward
+
+sudo systemctl stop apparmor
+sudo systemctl disable apparmor
 
 apt-get install containerd -y
 
@@ -34,6 +36,8 @@ systemctl restart containerd.service
 sudo apt-get install kubeadm kubelet kubernetes-cni -y
 
 sleep 10
+# create loopback device for the the CSI LVM
+sudo truncate -s 1024G /tmp/disk.img && sudo losetup -f /tmp/disk.img --show && sudo  pvcreate /dev/loop0 && sudo vgcreate lvmvg /dev/loop0
 
 EOF
 
@@ -48,7 +52,7 @@ cat<<EOF>> /tmp/setup_k8s.sh
 IP=\$(ip a show ens33 | grep "192.168" | cut -d " " -f6 | cut -d"/" -f1)
 HOST=\$(hostname)
 
-kubeadm config images pull 
+kubeadm config images pull
 
 apt-get install kubectl -y
 
@@ -75,7 +79,7 @@ EOF
 
 bash /tmp/setup_k8s.sh
 
-sleep 10 
+sleep 10
 
 for i in worker01 worker02 worker03; do scp /tmp/node-join.sh $i:/tmp/node-join.sh; done
 
@@ -115,13 +119,59 @@ metadata:
   name: myl2adv
   namespace: metallb-system
 EOF
-sleep 30
+sleep 60
 
 kubectl apply -f /tmp/metallb-address-pool.yaml
 
-for NODE in worker01 worker02 worker03 
+for NODE in worker01 worker02 worker03
 do
 kubectl label node $NODE node-role.kubernetes.io/worker=
 done
 
-rm -f /tmp/setup_containerd.sh /tmp/setup_k8s.sh /tmp/node-join.sh /tmp/metallb-address-pool.yaml
+# Installing Helm binary.
+
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+
+rm -f /tmp/setup_containerd.sh /tmp/setup_k8s.sh /tmp/node-join.sh /tmp/metallb-address-pool.yaml ./get_helm.sh
+
+sleep 5
+
+# Installing OpenEBS for Persistance Storage using Helm.
+
+helm repo add openebs https://openebs.github.io/openebs
+
+helm repo update
+
+helm install openebs --namespace openebs openebs/openebs --set engines.replicated.mayastor.enabled=false --create-namespace
+
+helm ls -n openebs
+
+cat<<EOF>>/tmp/lvm-storage-class.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-lvmpv
+parameters:
+  storage: "lvm"
+  volgroup: "lvmvg"
+provisioner: local.csi.openebs.io
+
+EOF
+kubectl apply -f /tmp/lvm-storage-class.yaml
+
+rm -f lvm-storage-class.yaml
+
+# Installing ISTIO
+curl -L https://istio.io/downloadIstio | sh -
+
+cp istio-1.*/bin/istioctl /usr/local/bin/
+
+istioctl install --set profile=demo -y
+
+kubectl create ns test-ns
+
+kubectl label namespace test-ns istio-injection=enabled
+
+echo "Lab is ready to test..."
