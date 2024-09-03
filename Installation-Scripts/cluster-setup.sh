@@ -163,15 +163,24 @@ kubectl apply -f /tmp/lvm-storage-class.yaml
 
 rm -f lvm-storage-class.yaml
 
+kubectl patch storageclass openebs-hostpath -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+ 
 # Installing ISTIO
 curl -L https://istio.io/downloadIstio | sh -
 
 cp istio-1.*/bin/istioctl /usr/local/bin/
 
-istioctl install --set profile=demo -y
+# Uncomment below to install Istio
+# istioctl install --set profile=demo -y
 
 kubectl create ns test-ns
 
 kubectl label namespace test-ns istio-injection=enabled
 
-echo "Lab is ready to test..."
+# Add HashiCorp Vault using helm and enable UI for testing.
+# helm repo add hashicorp https://helm.releases.hashicorp.com
+# helm repo update
+# helm install vault hashicorp/vault --set='ui.enabled=true' --set='ui.serviceType=LoadBalancer' --namespace vault --create-namespace
+
+
+echo "Lab is ready to testing..."
