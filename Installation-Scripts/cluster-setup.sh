@@ -160,9 +160,10 @@ parameters:
 provisioner: local.csi.openebs.io
 
 EOF
+# You can use the LVM Storage Class for testing purpose, in this script used the loopback device for dynamic provisining. you can assign additional disk for this volume group for testing.
 # kubectl apply -f /tmp/lvm-storage-class.yaml
 
-rm -f lvm-storage-class.yaml
+# rm -f /tmp/lvm-storage-class.yaml
 
 kubectl patch storageclass openebs-hostpath -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
  
