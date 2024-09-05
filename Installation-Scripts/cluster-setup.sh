@@ -6,9 +6,9 @@ rm -f /tmp/setup_containerd.sh /tmp/setup_k8s.sh /tmp/node-join.sh /tmp/metallb-
 cat<<EOF>> /tmp/setup_containerd.sh
 #!/bin/bash
 
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
 sudo apt-get update
 echo "net.ipv4.ip_forward = 1" | sudo tee /etc/sysctl.d/k8s.conf
@@ -58,7 +58,7 @@ apt-get install kubectl -y
 
 kubeadm init --cri-socket /run/containerd/containerd.sock --apiserver-advertise-address \$IP --control-plane-endpoint \$IP --pod-network-cidr 192.168.0.0/16 --node-name \$HOST --v=7
 
-wget https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml -O /tmp/calico.yaml
+wget https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/calico.yaml -O /tmp/calico.yaml
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
 
@@ -95,7 +95,7 @@ sleep 30
 
 kubectl get nodes -o wide
 
-wget https://raw.githubusercontent.com/metallb/metallb/v0.14.5/config/manifests/metallb-native.yaml -O /tmp/metallb-native.yaml
+wget https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml -O /tmp/metallb-native.yaml
 
 kubectl get configmap kube-proxy -n kube-system -o yaml | sed -e "s/strictARP: false/strictARP: true/" | kubectl apply -f - -n kube-system
 
@@ -148,6 +148,7 @@ helm install openebs --namespace openebs openebs/openebs --set engines.replicate
 
 helm ls -n openebs
 
+
 cat<<EOF>>/tmp/lvm-storage-class.yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -159,7 +160,7 @@ parameters:
 provisioner: local.csi.openebs.io
 
 EOF
-kubectl apply -f /tmp/lvm-storage-class.yaml
+# kubectl apply -f /tmp/lvm-storage-class.yaml
 
 rm -f lvm-storage-class.yaml
 
