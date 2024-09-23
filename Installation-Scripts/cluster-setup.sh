@@ -144,7 +144,7 @@ helm repo add openebs https://openebs.github.io/openebs
 
 helm repo update
 
-helm install openebs --namespace openebs openebs/openebs --set engines.replicated.mayastor.enabled=false --set engines.local.zfs.enabled=false --create-namespace
+helm install openebs --namespace openebs openebs/openebs --set engines.replicated.mayastor.enabled=false --set engines.local.zfs.enabled=false --set engines.local.lvm.enabled=false --create-namespace
 
 helm ls -n openebs
 
@@ -163,7 +163,7 @@ EOF
 # You can use the LVM Storage Class for testing purpose, in this script used the loopback device for dynamic provisining. you can assign additional disk for this volume group for testing.
 # kubectl apply -f /tmp/lvm-storage-class.yaml
 
-# rm -f /tmp/lvm-storage-class.yaml
+rm -f /tmp/lvm-storage-class.yaml
 
 kubectl patch storageclass openebs-hostpath -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
  
@@ -173,7 +173,7 @@ curl -L https://istio.io/downloadIstio | sh -
 cp istio-1.*/bin/istioctl /usr/local/bin/
 
 # Uncomment below to install Istio
-# istioctl install --set profile=demo -y
+istioctl install --set profile=demo -y
 
 kubectl create ns test-ns
 
