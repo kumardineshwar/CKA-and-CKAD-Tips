@@ -93,7 +93,7 @@ for i in worker01 worker02 worker03; do scp /tmp/node-join.sh $i:/tmp/node-join.
 for i in worker01 worker02 worker03; do ssh $i "sh /tmp/node-join.sh"; done
 
 # wait for all 3 worker node to join
-while [ \$(kubectl get nodes --no-headers | grep -c worker) -ne 3 ]; do sleep 10; done
+while [ $(kubectl get nodes --no-headers | grep -c worker) -ne 3 ]; do sleep 10; done
 
 
 for i in worker01 worker02 worker03; do ssh $i "rm -f /tmp/setup_containerd.sh /tmp/node-join.sh"; done
