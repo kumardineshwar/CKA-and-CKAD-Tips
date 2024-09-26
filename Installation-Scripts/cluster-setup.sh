@@ -41,8 +41,15 @@ sudo truncate -s 1024G /tmp/disk.img && sudo losetup -f /tmp/disk.img --show && 
 
 EOF
 
+VERSION="v1.31.1"
+wget https://github.com/kubernetes-sigs/cri-tools/releases/download/$VERSION/crictl-$VERSION-linux-amd64.tar.gz
+sudo tar zxvf crictl-$VERSION-linux-amd64.tar.gz -C /usr/local/bin
+rm -f crictl-$VERSION-linux-amd64.tar.gz
+
 
 for i in worker01 worker02 worker03; do scp /tmp/setup_containerd.sh $i:/tmp/setup_containerd.sh; done
+
+for i in worker01 worker02 worker03; do scp /usr/local/bin/crictl $i:/usr/local/bin/crictl; done
 
 for i in worker01 worker02 worker03 master01; do ssh $i "sh /tmp/setup_containerd.sh"; done
 
@@ -132,11 +139,13 @@ done
 
 curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
 chmod 700 get_helm.sh
-./get_helm.sh
+bash ./get_helm.sh
 
 rm -f /tmp/setup_containerd.sh /tmp/setup_k8s.sh /tmp/node-join.sh /tmp/metallb-address-pool.yaml ./get_helm.sh
 
 sleep 5
+
+helm version
 
 # Installing OpenEBS for Persistance Storage using Helm.
 
