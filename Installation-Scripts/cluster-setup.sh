@@ -37,7 +37,7 @@ sudo apt-get install kubeadm kubelet kubernetes-cni -y
 
 sleep 10
 # create loopback device for the the CSI LVM
-sudo truncate -s 1024G /tmp/disk.img && sudo losetup -f /tmp/disk.img --show && sudo  pvcreate /dev/loop0 && sudo vgcreate lvmvg /dev/loop0
+# sudo truncate -s 1024G /tmp/disk.img && sudo losetup -f /tmp/disk.img --show && sudo  pvcreate /dev/loop0 && sudo vgcreate lvmvg /dev/loop0
 
 EOF
 
@@ -92,6 +92,10 @@ for i in worker01 worker02 worker03; do scp /tmp/node-join.sh $i:/tmp/node-join.
 
 for i in worker01 worker02 worker03; do ssh $i "sh /tmp/node-join.sh"; done
 
+# wait for all 3 worker node to join
+while [ \$(kubectl get nodes --no-headers | grep -c worker) -ne 3 ]; do sleep 10; done
+
+
 for i in worker01 worker02 worker03; do ssh $i "rm -f /tmp/setup_containerd.sh /tmp/node-join.sh"; done
 
 # Clean UP
@@ -135,17 +139,19 @@ do
 kubectl label node $NODE node-role.kubernetes.io/worker=
 done
 
-# Installing Helm binary.
+# Installing Helm.
 
-curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-chmod 700 get_helm.sh
-bash ./get_helm.sh
+curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
 
-rm -f /tmp/setup_containerd.sh /tmp/setup_k8s.sh /tmp/node-join.sh /tmp/metallb-address-pool.yaml ./get_helm.sh
-
-sleep 5
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm -y
 
 helm version
+
+rm -f /tmp/setup_containerd.sh /tmp/setup_k8s.sh /tmp/node-join.sh /tmp/metallb-address-pool.yaml 
+
+sleep 5
 
 # Installing OpenEBS for Persistance Storage using Helm.
 
