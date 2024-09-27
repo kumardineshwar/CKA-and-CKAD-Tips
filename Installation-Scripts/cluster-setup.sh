@@ -188,6 +188,9 @@ curl -L https://istio.io/downloadIstio | sh -
 cp istio-1.*/bin/istioctl /usr/local/bin/
 
 # Uncomment below to install Istio
+
+istioctl completion bash > /etc/bash_completion.d/istioctl 
+
 istioctl install --set profile=demo -y
 
 kubectl create ns test-ns
