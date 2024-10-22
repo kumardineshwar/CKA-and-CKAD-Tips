@@ -63,9 +63,7 @@ kubeadm config images pull
 
 apt-get install kubectl -y
 
-kubeadm init --cri-socket /run/containerd/containerd.sock --apiserver-advertise-address \$IP --control-plane-endpoint \$IP --pod-network-cidr 192.168.0.0/16 --node-name \$HOST --v=7
-
-wget https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/calico.yaml -O /tmp/calico.yaml
+kubeadm init --cri-socket /run/containerd/containerd.sock --apiserver-advertise-address \$IP --control-plane-endpoint \$IP --node-name \$HOST --v=7
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
 
@@ -80,7 +78,7 @@ while [ \$(kubectl get nodes --no-headers | grep -c master01) -ne 1 ]; do sleep 
 
 sleep 30
 
-kubectl apply -f /tmp/calico.yaml
+kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
 
 EOF
 
