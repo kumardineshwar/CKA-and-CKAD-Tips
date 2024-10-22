@@ -198,5 +198,7 @@ kubectl label namespace test-ns istio-injection=enabled
 # helm repo update
 # helm install vault hashicorp/vault --set='ui.enabled=true' --set='ui.serviceType=LoadBalancer' --namespace vault --create-namespace
 
+# installing Metrics 
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 
 echo "Lab is ready to testing..."
