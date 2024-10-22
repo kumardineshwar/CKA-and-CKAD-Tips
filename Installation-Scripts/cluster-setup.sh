@@ -19,16 +19,14 @@ modprobe br_netfilter
 sudo sysctl --system
 sysctl net.ipv4.ip_forward
 
-sudo systemctl stop apparmor
-sudo systemctl disable apparmor --now
-
 apt-get install containerd -y
 
 mkdir -p /etc/containerd
 
 containerd config default | sudo tee /etc/containerd/config.toml
-sudo sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
-sudo sed -i 's/pause:3.8/pause:3.9/g' /etc/containerd/config.toml
+
+sudo sed -i -e 's/SystemdCgroup \= false/SystemdCgroup \= true/g' -e 's/disable_apparmor \= false/disable_apparmor \= true/g' -e 's/pause:3.8/pause:3.9/g' /etc/containerd/config.toml
+
 crictl config --set runtime-endpoint=unix:///run/containerd/containerd.sock --set image-endpoint=unix:///run/containerd/containerd.sock
 sudo systemctl daemon-reload
 systemctl restart containerd.service
