@@ -1,115 +1,120 @@
+#!/usr/bin/env bash
+
+# Set Variables
+WNODE=("worker01" "worker02" "worker03")
+MNODE="master01"
+K8S_VERSION="1.31" # Change this to your desired version (1.30, 1.31, 1.32)
+
+# Utility Functions
+show_progress() {
+    local duration=$1
+    local step=1
+    for ((i = 0; i <= duration; i += step)); do
+        printf "\r[%-50s] %d%%" "$(printf '#%.0s' $(seq 1 $((i * 50 / duration))))" "$((i * 100 / duration))"
+        sleep $step
+    done
+    echo ""
+}
+
+log() {
+    if [[ $VERBOSE -eq 1 ]]; then
+        echo -e "[LOG] $@"
+    fi
+}
+
+run_cmd() {
+    if [[ $VERBOSE -eq 1 ]]; then
+        eval "$@"
+    else
+        eval "$@" >/dev/null 2>&1
+    fi
+}
+
+check_ssh_connection() {
+    for node in "${WNODE[@]}" "$MNODE"; do
+        log "Checking SSH connection for $node..."
+        ssh "$node" "hostname" >/dev/null || {
+            echo "Failed to connect to $node. Ensure SSH passwordless login is configured."
+            exit 1
+        }
+    done
+    echo "SSH connections are verified for all nodes."
+}
+
+
+
+setup_containerd() {
+    local node=$1
+    ssh "$node" "bash -s" <<EOF
 #!/bin/bash
-#
+set -e
 
-rm -f /tmp/setup_containerd.sh /tmp/setup_k8s.sh /tmp/node-join.sh /tmp/metallb-address-pool.yaml /tmp/lvm-storage-class.yaml
-
-cat<<EOF>> /tmp/setup_containerd.sh
-#!/bin/bash
-
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
-sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
-sudo apt-get update
 echo "net.ipv4.ip_forward = 1" | sudo tee /etc/sysctl.d/k8s.conf
 echo "net.bridge.bridge-nf-call-iptables = 1" | sudo tee -a /etc/sysctl.d/k8s.conf
 echo "net.bridge.bridge-nf-call-ip6tables = 1" | sudo tee -a /etc/sysctl.d/k8s.conf
-modprobe br_netfilter
-
-sudo sysctl --system
-sysctl net.ipv4.ip_forward
-
-apt-get install containerd -y
-
-mkdir -p /etc/containerd
-
-containerd config default | sudo tee /etc/containerd/config.toml
-
-sudo sed -i -e 's/SystemdCgroup \= false/SystemdCgroup \= true/g' -e 's/disable_apparmor \= false/disable_apparmor \= true/g' -e 's/pause:3.8/pause:3.9/g' /etc/containerd/config.toml
-
-crictl config --set runtime-endpoint=unix:///run/containerd/containerd.sock --set image-endpoint=unix:///run/containerd/containerd.sock
+sudo modprobe br_netfilter
+sudo sysctl --system >/dev/null
+sudo mkdir -p /etc/apt/keyrings
+rm -f /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v$K8S_VERSION/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v$K8S_VERSION/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo DEBIAN_FRONTEND=noninteractive apt-get update
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y containerd kubeadm kubelet kubectl >/dev/null
+sudo mkdir -p /etc/containerd
+containerd config default | sudo tee /etc/containerd/config.toml >/dev/null
+sudo sed -i -e 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+sudo sed -i 's|sandbox_image = "registry.k8s.io/pause:3.8"|sandbox_image = "registry.k8s.io/pause:3.10"|' /etc/containerd/config.toml
 sudo systemctl daemon-reload
-systemctl restart containerd.service
-
-sudo apt-get install kubeadm kubelet kubernetes-cni -y
-
-sleep 10
-# create loopback device for the the CSI LVM
-# sudo truncate -s 1024G /tmp/disk.img && sudo losetup -f /tmp/disk.img --show && sudo  pvcreate /dev/loop0 && sudo vgcreate lvmvg /dev/loop0
-
+sudo systemctl restart containerd
 EOF
+    echo "Containerd and Kubernetes tools setup completed for $node."
+}
 
-VERSION="v1.31.1"
-wget https://github.com/kubernetes-sigs/cri-tools/releases/download/$VERSION/crictl-$VERSION-linux-amd64.tar.gz
-sudo tar zxvf crictl-$VERSION-linux-amd64.tar.gz -C /usr/local/bin
-rm -f crictl-$VERSION-linux-amd64.tar.gz
+setup_master_node() {
+    log "Setting up the master node..."
+    IP=$(hostname -I | awk '{print $1}')
+    HOST=$(hostname)
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y kubectl
+    sudo kubeadm config images pull
+    sudo kubeadm init --cri-socket /run/containerd/containerd.sock --apiserver-advertise-address $IP --control-plane-endpoint $IP --node-name $HOST --v=5
+    mkdir -p $HOME/.kube
+    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    sudo chown $(id -u):$(id -g) $HOME/.kube/config
+    echo 'source <(kubectl completion bash)' >>~/.bashrc
+    kubeadm token create --print-join-command --ttl 0 > /tmp/node-join.sh
+    log "Master node setup completed."
+}
 
+install_weave() {
+    log "Installing Weave networking..."
+    kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+    show_progress 30
+    kubectl wait -n kube-system --for=condition=Ready pod -l name=weave-net --timeout=600s
+}
 
-for i in worker01 worker02 worker03; do scp /tmp/setup_containerd.sh $i:/tmp/setup_containerd.sh; done
+install_csi_longhorn() {
+    log "Installing Longhorn CSI..."
+    kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/v1.7.2/deploy/longhorn.yaml
+    show_progress 60
+}
 
-for i in worker01 worker02 worker03; do scp /usr/local/bin/crictl $i:/usr/local/bin/crictl; done
+join_worker_nodes() {
+    log "Joining worker nodes..."
+    for node in "${WNODE[@]}"; do
+        echo "Setting up worker node: $node..."
+        scp "$MNODE:/tmp/node-join.sh" "$node:/tmp/node-join.sh"
+        ssh "$node" "bash /tmp/node-join.sh"
+    done
+    log "All worker nodes have joined the cluster."
+}
 
-for i in worker01 worker02 worker03 master01; do ssh $i "sh /tmp/setup_containerd.sh"; done
-
-cat<<EOF>> /tmp/setup_k8s.sh
-#!/bin/bash
-
-IP=\$(ip a show ens33 | grep "192.168" | cut -d " " -f6 | cut -d"/" -f1)
-HOST=\$(hostname)
-
-kubeadm config images pull
-
-apt-get install kubectl -y
-
-kubeadm init --cri-socket /run/containerd/containerd.sock --apiserver-advertise-address \$IP --control-plane-endpoint \$IP --node-name \$HOST --v=7
-
-export KUBECONFIG=/etc/kubernetes/admin.conf
-
-kubeadm token create --print-join-command --ttl 0 2>/dev/null | tee /tmp/node-join.sh
-
-mkdir -p /root/.kube
-sudo cp -i /etc/kubernetes/admin.conf /root/.kube/config
-echo 'source <(kubectl completion bash)' >> /root/.bashrc
-
-
-while [ \$(kubectl get nodes --no-headers | grep -c master01) -ne 1 ]; do sleep 10; done
-
-sleep 30
-
-kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
-
-EOF
-
-bash /tmp/setup_k8s.sh
-
-sleep 10
-
-for i in worker01 worker02 worker03; do scp /tmp/node-join.sh $i:/tmp/node-join.sh; done
-
-for i in worker01 worker02 worker03; do ssh $i "sh /tmp/node-join.sh"; done
-
-# wait for all 3 worker node to join
-while [ $(kubectl get nodes --no-headers | grep -c worker) -ne 3 ]; do sleep 10; done
-
-
-for i in worker01 worker02 worker03; do ssh $i "rm -f /tmp/setup_containerd.sh /tmp/node-join.sh"; done
-
-# Clean UP
-
-cp /tmp/node-join.sh node-join.sh
-
-sleep 30
-
-kubectl get nodes -o wide
-
-wget https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml -O /tmp/metallb-native.yaml
-
-kubectl get configmap kube-proxy -n kube-system -o yaml | sed -e "s/strictARP: false/strictARP: true/" | kubectl apply -f - -n kube-system
-
-kubectl apply -f /tmp/metallb-native.yaml
-
-cat<<EOF>>/tmp/metallb-address-pool.yaml
----
+install_metallb() {
+    log "Installing MetalLB..."
+    kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml
+    show_progress 60
+    kubectl wait --namespace metallb-system --for=condition=Ready pod -l component=controller --timeout=600s
+    kubectl apply -f - <<EOF
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
@@ -117,8 +122,7 @@ metadata:
   namespace: metallb-system
 spec:
   addresses:
-  - 192.168.90.240-192.168.90.245
-
+  - 192.168.90.240-192.168.90.250
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
@@ -126,79 +130,38 @@ metadata:
   name: myl2adv
   namespace: metallb-system
 EOF
-sleep 60
+    log "MetalLB installed and configured."
+}
 
-kubectl apply -f /tmp/metallb-address-pool.yaml
+install_istio() {
+echo -n "Do you want to install Istio? (yes/no) [default: yes]: "
+read -r install_istio
+install_istio=${install_istio:-yes}  # Default to 'yes' if nothing is entered
 
-for NODE in worker01 worker02 worker03
-do
-kubectl label node $NODE node-role.kubernetes.io/worker=
+if [[ "$install_istio" == "yes" ]]; then
+        curl -L https://istio.io/downloadIstio | sh -
+        ISTIO_DIR=$(ls -d istio-*)
+        sudo mv $ISTIO_DIR/bin/istioctl /usr/local/bin/
+        istioctl install --set profile=demo -y
+        log "Istio installed."
+    else
+        log "Skipping Istio installation."
+    fi
+}
+
+# Main Script
+VERBOSE=1  # Set to 0 for silent mode
+check_ssh_connection
+for node in "${WNODE[@]}" "$MNODE"; do
+    setup_containerd "$node"
 done
 
-# Installing Helm.
 
-curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+setup_master_node
+install_weave
+join_worker_nodes
+install_csi_longhorn
+install_metallb
+install_istio
 
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
-sudo apt-get update
-sudo apt-get install helm -y
-
-helm version
-
-rm -f /tmp/setup_containerd.sh /tmp/setup_k8s.sh /tmp/node-join.sh /tmp/metallb-address-pool.yaml 
-
-sleep 5
-
-# Installing OpenEBS for Persistance Storage using Helm.
-
-helm repo add openebs https://openebs.github.io/openebs
-
-helm repo update
-
-helm install openebs --namespace openebs openebs/openebs --set engines.replicated.mayastor.enabled=false --set engines.local.zfs.enabled=false --set engines.local.lvm.enabled=false --create-namespace
-
-helm ls -n openebs
-
-
-cat<<EOF>>/tmp/lvm-storage-class.yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: openebs-lvmpv
-parameters:
-  storage: "lvm"
-  volgroup: "lvmvg"
-provisioner: local.csi.openebs.io
-
-EOF
-# You can use the LVM Storage Class for testing purpose, in this script used the loopback device for dynamic provisining. you can assign additional disk for this volume group for testing.
-# kubectl apply -f /tmp/lvm-storage-class.yaml
-
-rm -f /tmp/lvm-storage-class.yaml
-
-kubectl patch storageclass openebs-hostpath -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
- 
-# Installing ISTIO
-curl -L https://istio.io/downloadIstio | sh -
-
-cp istio-1.*/bin/istioctl /usr/local/bin/
-
-# Uncomment below to install Istio
-
-istioctl completion bash > /etc/bash_completion.d/istioctl 
-
-istioctl install --set profile=demo -y
-
-kubectl create ns test-ns
-
-kubectl label namespace test-ns istio-injection=enabled
-
-# Add HashiCorp Vault using helm and enable UI for testing.
-# helm repo add hashicorp https://helm.releases.hashicorp.com
-# helm repo update
-# helm install vault hashicorp/vault --set='ui.enabled=true' --set='ui.serviceType=LoadBalancer' --namespace vault --create-namespace
-
-# installing Metrics 
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-
-echo "Lab is ready to testing..."
+echo "Kubernetes cluster setup completed successfully!"
