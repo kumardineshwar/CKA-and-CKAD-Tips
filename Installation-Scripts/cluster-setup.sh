@@ -148,6 +148,13 @@ if [[ "$install_istio" == "yes" ]]; then
         log "Skipping Istio installation."
     fi
 }
+label_worker_nodes() {
+    log "labeling worker nodes..."
+    for node in "${WNODE[@]}"; do
+        kubectl label node $node node-role.kubernetes.io/worker=
+    done
+    log "All worker nodes labeled now in cluster."
+}
 
 # Main Script
 VERBOSE=1  # Set to 0 for silent mode
@@ -160,6 +167,7 @@ done
 setup_master_node
 install_weave
 join_worker_nodes
+label_worker_nodes
 install_csi_longhorn
 install_metallb
 install_istio
